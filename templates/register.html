@@ -1,4 +1,4 @@
-{% extends "bootstrap/base.html" %}
+{% extends "login-register-base.html" %}
 {% import "bootstrap/wtf.html" as wtf %}
 
 {% block content %}
@@ -15,10 +15,10 @@
                         {% endif %}
                         {% endwith %}
 
-                        {{ wtf.quick_form(form, novalidate=True, button_map={"submit": "danger"}) }}
+                        {{ wtf.quick_form(form, novalidate=True, button_map={"submit": "dark"}) }}
                     <br>
                     <div class="col">
-                        <a href="{{ url_for('login') }}" type="button" class="btn btn-danger">Already have an account? Click here!</a>
+                        <a href="{{ url_for('login') }}" type="button" class="btn btn-dark">Already have an account? Click here!</a>
                     </div>
                 </div>
             </div>
