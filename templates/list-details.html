@@ -1,0 +1,35 @@
+{% extends "header.html" %}
+
+{% block content %}
+<div class="container-fluid text-center lists-container col-lg-6 col-md-6 col-auto">
+    <p>Click to Edit a To-Do Task!</p>
+
+    <ul class="list-group col-lg-8 mx-auto">
+        {% for list_item in list.list_items %}
+        <ul class="list-group list-group-horizontal col-auto">
+            <a class="list-group-item list-group-item-action col-auto mx-auto">
+                {% if list_item.complete %}
+                <s>{{ list_item.body }}</s>
+                {% else %}
+                {{ list_item.body }}
+                {% endif %}
+            </a>
+            {% if list_item.complete %}
+            <a href="{{ url_for('mark_list_item_incomplete', list_item_id=list_item.id) }}"
+                class="list-group-item list-group-item-action list-group-item-warning">↪️</a>
+            {% else %}
+            <a href="{{ url_for('mark_list_item_complete', list_item_id=list_item.id) }}"
+                class="list-group-item list-group-item-action list-group-item-success">✅</a>
+            {% endif %}
+            <a href="{{ url_for('delete_list_item', list_item_id=list_item.id) }}"
+                class="list-group-item list-group-item-action list-group-item-danger">🗑️</a>
+        </ul>
+        {% endfor %}
+    </ul>
+
+    <a class="btn btn-success new-list-btn" href="{{ url_for('create_new_list_item', list_id=list.id) }}">
+        Add a New Task</a>
+    <br>
+    <a class="btn btn-danger new-list-btn" href="#">Delete Entire List</a>
+</div>
+{% endblock %}

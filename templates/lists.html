@@ -1,2 +1,17 @@
 {% extends "header.html" %}
 
+{% block content %}
+<div class="container text-center lists-container">
+    <ul class="list-group col-md-6 mx-auto">
+        {% for list in lists %}
+        <a href="{{ url_for('list_details', list_id=list.id) }}"
+            class="list-group-item list-group-item-light list-group-item-action align-items-center justify-content-between d-flex col-md-11">
+            {{ list.name }}
+            <span class="badge badge-primary badge-pill">{{ list.list_items | length }}</span>
+        </a>
+        {% endfor %}
+    </ul>
+    <a class="btn btn-success new-list-btn mx-auto" href="{{ url_for('create_new_list') }}">Create a New List</a>
+
+</div>
+{% endblock %}

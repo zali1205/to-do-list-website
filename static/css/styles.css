@@ -2,7 +2,7 @@ body {
     background-color: #333;
     color: white;
 }
-  
+
 p {
     line-height: 1.5;
     margin: 30px 0;
@@ -10,4 +10,14 @@ p {
 
 .navbar {
     background-color: #212529;
+}
+
+.new-list-btn,
+.create-list-container,
+.lists-container {
+    margin-top: 10px;
+}
+
+.flask-alert {
+    color: red;
 }

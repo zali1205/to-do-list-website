@@ -2,26 +2,25 @@
 {% import "bootstrap/wtf.html" as wtf %}
 
 {% block content %}
-    <div class="text-center">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-8 col-md-10 mx-auto content">
-                    <h1>Please sign in</h1>
-                    {% with messages = get_flashed_messages() %}
-                        {% if messages %}
-                        {% for message in messages %}
-                        <p>{{ message }}</p>
-                        {% endfor %}
-                        {% endif %}
-                        {% endwith %}
+<div class="container text-center login-register-container">
+    <div class="row">
+        <div class="col-md-6 mx-auto content">
+            <h1>Please sign in</h1>
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            {% for message in messages %}
+            <p class="flask-alert">{{ message }}</p>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
 
-                        {{ wtf.quick_form(form, novalidate=True, button_map={"submit": "dark"}) }}
-                    <br>
-                    <div class="col">
-                        <a href="{{ url_for('login') }}" type="button" class="btn btn-dark">Already have an account? Click here!</a>
-                    </div>
-                </div>
+            {{ wtf.quick_form(form, novalidate=True, button_map={"submit": "dark"}) }}
+            <br>
+            <div class="col">
+                <a href="{{ url_for('login') }}" type="button" class="btn btn-dark">Already have an account? Click
+                    here!</a>
             </div>
         </div>
     </div>
+</div>
 {% endblock %}

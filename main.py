@@ -3,8 +3,9 @@ from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import login_user, LoginManager, login_required, current_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from forms import LoginForm, RegisterForm
+from forms import LoginForm, RegisterForm, CreateNewListForm, CreateNewListItemForm
 import os
+import datetime
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get("FLASK_SECRET_KEY")
@@ -18,10 +19,31 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../to-do.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
-from models import User
+from models import User, List, ListItem
 
 with app.app_context():
     db.create_all()
+
+def check_list_item_bounds(list_item):
+    if list_item == None:
+        return abort(404)
+    current_user_lists = List.query.filter_by(author_id=current_user.id).all()
+    found = False
+    for current_list in current_user_lists:
+        if list_item.parent_list_id == current_list.id:
+            found = True
+            break
+    if found == False:
+        return abort(404)
+
+def check_list_bounds(lists, list_id):
+    list_to_find = None
+    for current_list in lists:
+        if current_list.id == list_id:
+            list_to_find = current_list
+    if list_to_find == None:
+        return abort(404)
+    return list_to_find
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -76,7 +98,70 @@ def logout():
 @app.route('/lists', methods=["GET"])
 @login_required
 def lists():
-    return render_template("lists.html")
+    lists = List.query.filter_by(author_id=current_user.id).all()
+    return render_template("lists.html", lists=lists)
+
+@app.route("/list-detail/<int:list_id>", methods=["GET"])
+@login_required
+def list_details(list_id):
+    lists = List.query.filter_by(author_id=current_user.id).all()
+    list_to_find = check_list_bounds(lists, list_id)
+    return render_template('list-details.html', list=list_to_find)
+
+@app.route("/create-new-list", methods=["GET", "POST"])
+@login_required
+def create_new_list():
+    form = CreateNewListForm()
+    if form.validate_on_submit():
+        name = form.name.data
+        date = datetime.datetime.now()
+        author_id = current_user.id
+        new_list = List(name=name, date=date, author_id=author_id)
+        db.session.add(new_list)
+        db.session.commit()
+        return redirect(url_for('lists'))
+    return render_template("create-list.html", form=form)
+
+@app.route("/create-new-list-item/<int:list_id>", methods=["GET", "POST"])
+@login_required
+def create_new_list_item(list_id):
+    form = CreateNewListItemForm()
+    if form.validate_on_submit():
+        body = form.body.data
+        parent_list_id = list_id
+        new_list_item = ListItem(body=body, parent_list_id=parent_list_id)
+        db.session.add(new_list_item)
+        db.session.commit()
+        return redirect(url_for('list_details', list_id=parent_list_id))
+
+    return render_template("create-new-list-item.html", form=form)
+
+@app.route("/list-item-complete/<int:list_item_id>", methods=["GET"])
+@login_required
+def mark_list_item_complete(list_item_id):
+    list_item = ListItem.query.filter_by(id=list_item_id).first()
+    check_list_item_bounds(list_item)
+    list_item.complete = True
+    db.session.commit()
+    return redirect(url_for('list_details', list_id=list_item.parent_list_id))
+
+@app.route("/list-item-incomplete/<int:list_item_id>", methods=["GET"])
+@login_required
+def mark_list_item_incomplete(list_item_id):
+    list_item = ListItem.query.filter_by(id=list_item_id).first()
+    check_list_item_bounds(list_item)
+    list_item.complete = False
+    db.session.commit()
+    return redirect(url_for('list_details', list_id=list_item.parent_list_id))
+
+@app.route("/list-item-delete/<int:list_item_id>", methods=["GET"])
+@login_required
+def delete_list_item(list_item_id):
+    list_item = ListItem.query.filter_by(id=list_item_id).first()
+    check_list_item_bounds(list_item)
+    db.session.delete(list_item)
+    db.session.commit()
+    return redirect(url_for('list_details', list_id=list_item.parent_list_id))
 
 if __name__ == "__main__":
     app.run(port=8000, debug=True)
