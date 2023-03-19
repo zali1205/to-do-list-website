@@ -1,9 +1,9 @@
-from flask import Flask, render_template, redirect, url_for, flash, abort
+from flask import Flask, render_template, redirect, url_for, flash, abort, request
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import login_user, LoginManager, login_required, current_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from forms import LoginForm, RegisterForm, CreateNewListForm, CreateNewListItemForm
+from forms import LoginForm, RegisterForm, CreateNewListForm, CreateNewListItemForm, EditListItemForm
 import os
 import datetime
 
@@ -28,13 +28,10 @@ def check_list_item_bounds(list_item):
     if list_item == None:
         return abort(404)
     current_user_lists = List.query.filter_by(author_id=current_user.id).all()
-    found = False
     for current_list in current_user_lists:
         if list_item.parent_list_id == current_list.id:
-            found = True
-            break
-    if found == False:
-        return abort(404)
+            return
+    return abort(404)
 
 def check_list_bounds(lists, list_id):
     list_to_find = None
@@ -44,6 +41,12 @@ def check_list_bounds(lists, list_id):
     if list_to_find == None:
         return abort(404)
     return list_to_find
+
+def check_list_complete(current_list):
+    for list_item in current_list.list_items:
+        if not list_item.complete:
+            return False
+    return True
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -99,7 +102,7 @@ def logout():
 @login_required
 def lists():
     lists = List.query.filter_by(author_id=current_user.id).all()
-    return render_template("lists.html", lists=lists)
+    return render_template("lists.html", lists=lists, current_user = current_user)
 
 @app.route("/list-detail/<int:list_id>", methods=["GET"])
 @login_required
@@ -119,7 +122,7 @@ def create_new_list():
         new_list = List(name=name, date=date, author_id=author_id)
         db.session.add(new_list)
         db.session.commit()
-        return redirect(url_for('lists'))
+        return redirect(url_for('lists', current_user=current_user))
     return render_template("create-list.html", form=form)
 
 @app.route("/create-new-list-item/<int:list_id>", methods=["GET", "POST"])
@@ -136,12 +139,30 @@ def create_new_list_item(list_id):
 
     return render_template("create-new-list-item.html", form=form)
 
+@app.route("/edit-list-item/<int:list_item_id>", methods=["GET", "POST"])
+@login_required
+def edit_list_item(list_item_id):
+    list_item_to_edit = ListItem.query.filter_by(id=list_item_id).first()
+    check_list_item_bounds(list_item_to_edit)
+    form = EditListItemForm()
+    if request.method == "GET":
+        form.body.data = list_item_to_edit.body
+    if form.validate_on_submit():
+        new_body = form.body.data
+        list_item_to_edit.body = new_body
+        db.session.commit()
+        return redirect(url_for("list_details", list_id=list_item_to_edit.parent_list_id))
+    return render_template('edit-list-item.html', form=form)
+
 @app.route("/list-item-complete/<int:list_item_id>", methods=["GET"])
 @login_required
 def mark_list_item_complete(list_item_id):
     list_item = ListItem.query.filter_by(id=list_item_id).first()
+    current_list = List.query.filter_by(id=list_item.parent_list_id).first()
     check_list_item_bounds(list_item)
     list_item.complete = True
+    if check_list_complete(current_list):
+        current_list.complete = True
     db.session.commit()
     return redirect(url_for('list_details', list_id=list_item.parent_list_id))
 
@@ -149,7 +170,9 @@ def mark_list_item_complete(list_item_id):
 @login_required
 def mark_list_item_incomplete(list_item_id):
     list_item = ListItem.query.filter_by(id=list_item_id).first()
+    current_list = List.query.filter_by(id=list_item.parent_list_id).first()
     check_list_item_bounds(list_item)
+    current_list.complete = False
     list_item.complete = False
     db.session.commit()
     return redirect(url_for('list_details', list_id=list_item.parent_list_id))
@@ -157,11 +180,23 @@ def mark_list_item_incomplete(list_item_id):
 @app.route("/list-item-delete/<int:list_item_id>", methods=["GET"])
 @login_required
 def delete_list_item(list_item_id):
-    list_item = ListItem.query.filter_by(id=list_item_id).first()
-    check_list_item_bounds(list_item)
-    db.session.delete(list_item)
+    list_item_delete = ListItem.query.filter_by(id=list_item_id).first()
+    check_list_item_bounds(list_item_delete)
+    db.session.delete(list_item_delete)
     db.session.commit()
-    return redirect(url_for('list_details', list_id=list_item.parent_list_id))
+    return redirect(url_for('list_details', list_id=list_item_delete.parent_list_id))
+
+@app.route("/list-delete/<int:list_id>", methods=["GET"])
+@login_required
+def delete_list(list_id):
+    list_to_delete = List.query.filter_by(id=list_id).first()
+    current_user_lists = List.query.filter_by(author_id=current_user.id).all()
+    check_list_bounds(current_user_lists, list_id)
+    for list_item in list_to_delete.list_items:
+        db.session.delete(list_item)
+    db.session.delete(list_to_delete)
+    db.session.commit()
+    return redirect(url_for('lists', current_user=current_user))
 
 if __name__ == "__main__":
     app.run(port=8000, debug=True)

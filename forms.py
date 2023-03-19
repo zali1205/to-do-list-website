@@ -20,3 +20,7 @@ class CreateNewListForm(FlaskForm):
 class CreateNewListItemForm(FlaskForm):
     body = StringField("Thing to Do", validators=[DataRequired()])
     submit = SubmitField("Submit")
+
+class EditListItemForm(FlaskForm):
+    body = StringField("Thing to Do", validators=[DataRequired()])
+    submit = SubmitField("Edit")

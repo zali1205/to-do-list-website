@@ -3,9 +3,9 @@
 
 {% block content %}
 <div class="container text-center login-register-container">
-    <div class="row">
+    <div class="row login-register-container">
         <div class="col-md-6 mx-auto content">
-            <h1>Please sign in</h1>
+            <h1>Sign Up Now!</h1>
             {% with messages = get_flashed_messages() %}
             {% if messages %}
             {% for message in messages %}
@@ -14,10 +14,10 @@
             {% endif %}
             {% endwith %}
 
-            {{ wtf.quick_form(form, novalidate=True, button_map={"submit": "dark"}) }}
+            {{ wtf.quick_form(form, novalidate=True, button_map={"submit": "light"}) }}
             <br>
             <div class="col">
-                <a href="{{ url_for('login') }}" type="button" class="btn btn-dark">Already have an account? Click
+                <a href="{{ url_for('login') }}" type="button" class="btn btn-light">Already have an account? Click
                     here!</a>
             </div>
         </div>

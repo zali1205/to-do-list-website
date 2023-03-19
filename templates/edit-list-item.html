@@ -1,0 +1,12 @@
+{% extends "header.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block content %}
+
+<div class="container text-center create-list-container">
+    <div class="col-md-6 mx-auto">
+        {{ wtf.quick_form(form, novalidate=True, button_map={"submit": "success"}) }}
+    </div>
+</div>
+
+{% endblock %}

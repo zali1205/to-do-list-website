@@ -14,7 +14,8 @@ p {
 
 .new-list-btn,
 .create-list-container,
-.lists-container {
+.lists-container,
+.login-register-container {
     margin-top: 10px;
 }
 
