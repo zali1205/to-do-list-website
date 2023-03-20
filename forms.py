@@ -24,3 +24,7 @@ class CreateNewListItemForm(FlaskForm):
 class EditListItemForm(FlaskForm):
     body = StringField("Thing to Do", validators=[DataRequired()])
     submit = SubmitField("Edit")
+
+class EditListForm(FlaskForm):
+    name = StringField("List Name", validators=[DataRequired()])
+    submit = SubmitField("Edit")

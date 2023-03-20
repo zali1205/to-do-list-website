@@ -3,9 +3,9 @@ from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import login_user, LoginManager, login_required, current_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from forms import LoginForm, RegisterForm, CreateNewListForm, CreateNewListItemForm, EditListItemForm
+from forms import LoginForm, RegisterForm, CreateNewListForm, CreateNewListItemForm, EditListItemForm, EditListForm
+from datetime import date
 import os
-import datetime
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get("FLASK_SECRET_KEY")
@@ -117,13 +117,41 @@ def create_new_list():
     form = CreateNewListForm()
     if form.validate_on_submit():
         name = form.name.data
-        date = datetime.datetime.now()
+        list_date = date.today().strftime("%b %d, %Y")
         author_id = current_user.id
-        new_list = List(name=name, date=date, author_id=author_id)
+        new_list = List(name=name, date=list_date, author_id=author_id)
         db.session.add(new_list)
         db.session.commit()
         return redirect(url_for('lists', current_user=current_user))
     return render_template("create-list.html", form=form)
+
+@app.route("/edit-list/<int:list_id>", methods=["GET", "POST"])
+@login_required
+def edit_list(list_id):
+    list_to_edit = List.query.filter_by(id=list_id).first()
+    current_user_lists = List.query.filter_by(author_id=current_user.id).all()
+    check_list_bounds(current_user_lists, list_id)
+    form = EditListForm()
+    if request.method == "GET":
+        form.name.data = list_to_edit.name
+    if form.validate_on_submit():
+        new_name = form.name.data
+        list_to_edit.name = new_name
+        db.session.commit()
+        return redirect(url_for('lists'))
+    return render_template("edit-list.html", form=form)
+
+@app.route("/list-delete/<int:list_id>", methods=["GET"])
+@login_required
+def delete_list(list_id):
+    list_to_delete = List.query.filter_by(id=list_id).first()
+    current_user_lists = List.query.filter_by(author_id=current_user.id).all()
+    check_list_bounds(current_user_lists, list_id)
+    for list_item in list_to_delete.list_items:
+        db.session.delete(list_item)
+    db.session.delete(list_to_delete)
+    db.session.commit()
+    return redirect(url_for('lists', current_user=current_user))
 
 @app.route("/create-new-list-item/<int:list_id>", methods=["GET", "POST"])
 @login_required
@@ -163,6 +191,8 @@ def mark_list_item_complete(list_item_id):
     list_item.complete = True
     if check_list_complete(current_list):
         current_list.complete = True
+        db.session.commit()
+        return redirect(url_for('lists'))
     db.session.commit()
     return redirect(url_for('list_details', list_id=list_item.parent_list_id))
 
@@ -185,18 +215,6 @@ def delete_list_item(list_item_id):
     db.session.delete(list_item_delete)
     db.session.commit()
     return redirect(url_for('list_details', list_id=list_item_delete.parent_list_id))
-
-@app.route("/list-delete/<int:list_id>", methods=["GET"])
-@login_required
-def delete_list(list_id):
-    list_to_delete = List.query.filter_by(id=list_id).first()
-    current_user_lists = List.query.filter_by(author_id=current_user.id).all()
-    check_list_bounds(current_user_lists, list_id)
-    for list_item in list_to_delete.list_items:
-        db.session.delete(list_item)
-    db.session.delete(list_to_delete)
-    db.session.commit()
-    return redirect(url_for('lists', current_user=current_user))
 
 if __name__ == "__main__":
     app.run(port=8000, debug=True)
