@@ -7,24 +7,24 @@
         {% for list in lists %}
         {% if list.complete %}
         <a href="{{ url_for('list_details', list_id=list.id) }}"
-            class="list-group-item list-group-item-light list-group-item-action align-items-center">
+            class="list-group-item list-group-item-success list-group-item-action">
             <div class="d-flex justify-content-between w-100">
-                <s>{{ list.name }}</s>
-                <span class="badge badge-primary badge-pill m-1">{{ list.list_items | length }}</span>
+                <h5><s>{{ list.name }}</s></h5>
+                <span class="badge badge-primary badge-pill m-2"><s>{{ list.list_items | length }}</s></span>
             </div>
             <div class="text-left">
-                <small class="">{{ list.date }}</small>
+                <small><s>{{ list.date }}</s></small>
             </div>
         </a>
         {% else %}
         <a href="{{ url_for('list_details', list_id=list.id) }}"
-            class="list-group-item list-group-item-light list-group-item-action align-items-center">
-            <div class="d-flex justify-content-between w-100">
-                {{ list.name }}
-                <span class="badge badge-primary badge-pill m-1">{{ list.list_items | length }}</span>
+            class="list-group-item list-group-item-warning list-group-item-action">
+            <div class="d-flex justify-content-between w-100 fw-bold">
+                <h5>{{ list.name }}</h5>
+                <span class="badge badge-primary badge-pill m-2">{{ list.list_items | length }}</span>
             </div>
             <div class="text-left">
-                <small class="">{{ list.date }}</small>
+                <small>{{ list.date }}</small>
             </div>
         </a>
         {% endif %}
